@@ -123,7 +123,11 @@ class TableControl(View):
 
         joinButton = Button(label="Join Table", style=discord.ButtonStyle.primary)
         joinButton.callback = self.wrap_callback(joinTable)
+
+        leaveButton = Button(label="Leave Table", style=discord.ButtonStyle.danger)
+        leaveButton.callback = self.wrap_callback(leaveTable)
         self.add_item(joinButton)
+        self.add_item(leaveButton)
 
     def wrap_callback(self, func):
         async def callback(interaction: discord.Interaction):
@@ -143,6 +147,25 @@ async def on_interaction(interaction: discord.Interaction):
     #     await interaction.response.send_message(interaction.data, ephemeral=False)
 
 async def joinTable(interaction: discord.Interaction, tableName,message):
+    if(str(interaction.user.name) in pokerTables[str(tableName.value)]["names"]):
+        await interaction.response.send_message(f"You are already in table {tableName}!")
+        return
+    pokerTables[str(tableName.value)]["names"].add(interaction.user.name)
+    pokerTables[str(tableName.value)]["pfps"].add(interaction.user.display_avatar.url)
+    interaction.user.display_avatar
+    ogEmbed = message.embeds[0]
+    embed = discord.Embed(
+        title=ogEmbed.title,
+        description= ogEmbed.description + f"\n Players: {pokerTables[tableName.value]['names']}",
+        color=discord.Color.brand_red() 
+    )
+    file = await dynamicImage.wedgeImageByURLs(pokerTables[str(tableName.value)]["pfps"],client)
+    embed.set_thumbnail(url="attachment://pie_chart.png")  
+    await message.edit(embed=embed,attachments=[file])
+    await interaction.response.send_message(f"{interaction.user.name} has joined table {tableName}", ephemeral=True)
+
+
+async def leaveTable(interaction: discord.Interaction, tableName,message):
     if(str(interaction.user.name) in pokerTables[str(tableName.value)]["names"]):
         await interaction.response.send_message(f"You are already in table {tableName}!")
         return
