@@ -155,8 +155,9 @@ async def joinTable(interaction: discord.Interaction, tableName,message):
         description= ogEmbed.description + f"\n Players: {pokerTables[tableName.value]['names']}",
         color=discord.Color.brand_red() 
     )
-    embed.set_thumbnail(url=await dynamicImage.wedgeImageByURLs(pokerTables[str(tableName.value)]["pfps"],client))  
-    await message.edit(embed=embed)
+    file = await dynamicImage.wedgeImageByURLs(pokerTables[str(tableName.value)]["pfps"],client)
+    embed.set_thumbnail(url="attachment://pie_chart.png")  
+    await message.edit(embed=embed,attachments=[file])
     await interaction.response.send_message(f"{interaction.user.name} has joined table {tableName}", ephemeral=True)
     
 
@@ -164,7 +165,14 @@ async def joinTable(interaction: discord.Interaction, tableName,message):
 
 # @client.command()
 # async def menu(ctx):
-#     await ctx.send("menu:", view=DropdownView())
+#     embed = discord.Embed(
+#         title="e",
+#         description="e",
+#         color=discord.Color.blue() 
+#     )
+#     file = discord.File("british.png")
+#     embed.set_thumbnail(url="attachment://british.png")  
+#     await ctx.send(embed=embed,file=file)
 
 # class DropdownMenu(Select):
 #     def __init__(self):

@@ -22,12 +22,7 @@ async def wedgeImageByURLs(urls,client):
     pie.save(image_binary, format="PNG")
     image_binary.seek(0)
     file = discord.File(fp=image_binary, filename="pie_chart.png")
-    BROKREIMAGEHOSTCHANNELID = 1376639452499415301
-    channel = client.get_channel(BROKREIMAGEHOSTCHANNELID)
-    async def uploadToBrokreImageHosting(file):
-        message = await channel.send(file=file)
-        return message.attachments[0].url
-    return await uploadToBrokreImageHosting(file)
+    return file
 
 def create_wedge_mask(size, start_angle, end_angle):
     mask = Image.new("L", size, 0)
