@@ -1,11 +1,11 @@
 from dotenv import load_dotenv
 import discord
 from discord.ext import commands
-from discord.ui import View, Select, Button
-from discord import app_commands
+from discord.ui import View, Button
 from discord.ext import commands #idk how important this one is
 import os
 import json
+import dynamicImage
 
 load_dotenv()
 token = os.getenv("TOKEN")
@@ -24,7 +24,7 @@ async def on_ready():
     print("sucks")
 
 pokerTables = {
-    "table":{"people","people"}
+    "table":{}
 }
 
 class TableSetup(discord.ui.Modal, title="Table Setup"):
@@ -62,7 +62,10 @@ class TableSetup(discord.ui.Modal, title="Table Setup"):
             await interaction.response.send_message(f"Table {self.tableName} already exists!", ephemeral=True)
             return
         
-        pokerTables[str(self.tableName.value)] = set()
+        pokerTables[str(self.tableName.value)] = {
+            "names": set(),
+            "pfps": set()
+        }
         embed = discord.Embed(
         title=f"{interaction.user.display_name} Has Created Table, {self.tableName}!",
         description= f"<:brokre:1376477769570975744>Small Blind: {self.smallBlind} \n <:brokre:1376477769570975744>Big Blind: {self.bigBlind}\n  Max Players: {self.maxPlayers}",
@@ -140,19 +143,24 @@ async def on_interaction(interaction: discord.Interaction):
     #     await interaction.response.send_message(interaction.data, ephemeral=False)
 
 async def joinTable(interaction: discord.Interaction, tableName,message):
-    if(str(interaction.user.name) in pokerTables[str(tableName.value)]):
+    if(str(interaction.user.name) in pokerTables[str(tableName.value)]["names"]):
         await interaction.response.send_message(f"You are already in table {tableName}!")
         return
-    pokerTables[str(tableName.value)].add(interaction.user.name)
-    ogEmbed = message
-    new_embed = discord.Embed(
-            title=f"{interaction.user.display_name}'s Table Updated!",
-            description="New details here...",
-            color=discord.Color.green()
-        )
-    await ogEmbed.edit(embed=new_embed)
-    await interaction.response.send_message(f"{interaction.user.name} has joined table {tableName}", ephemeral=False)
+    pokerTables[str(tableName.value)]["names"].add(interaction.user.name)
+    pokerTables[str(tableName.value)]["pfps"].add(interaction.user.display_avatar.url)
+    interaction.user.display_avatar
+    ogEmbed = message.embeds[0]
+    embed = discord.Embed(
+        title=ogEmbed.title,
+        description= ogEmbed.description + f"\n Players: {pokerTables[tableName.value]['names']}",
+        color=discord.Color.brand_red() 
+    )
+    embed.set_thumbnail(url=await dynamicImage.wedgeImageByURLs(pokerTables[str(tableName.value)]["pfps"],client))  
+    await message.edit(embed=embed)
+    await interaction.response.send_message(f"{interaction.user.name} has joined table {tableName}", ephemeral=True)
     
+
+
 
 # @client.command()
 # async def menu(ctx):
