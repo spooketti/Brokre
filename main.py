@@ -48,15 +48,20 @@ class TableSetup(discord.ui.Modal, title="Table Setup"):
     )
 
     async def on_submit(self, interaction: discord.Interaction):
-        if self.maxPlayers == None or (int)(str(self.maxPlayers)) <= 0:
+        try:
+            if( (int)(self.maxPlayers) <= 0):
+                raise Exception("invalid")
+            self.maxPlayers = (int)(self.maxPlayers)
+        except:
             self.maxPlayers = "Uncapped"
+            
         embed = discord.Embed(
         title=f"{interaction.user.display_name} Has Created Table, {self.tableName}!",
         description= f"<:brokre:1376477769570975744>Small Blind: {self.smallBlind} \n <:brokre:1376477769570975744>Big Blind: {self.bigBlind}\n  Max Players: {self.maxPlayers}",
         color=discord.Color.brand_red() 
     )
         await interaction.response.send_message(
-            embed=embed,view=MyView()
+             embed=embed,view=TableControl(self.tableName)
         )
 
 @client.tree.command(name="start", guild=brogreID)
@@ -86,19 +91,42 @@ async def profile(interaction: discord.Interaction):
     embed.set_footer(text="footer")
     embed.set_thumbnail(url=interaction.user.display_avatar.url)  
 
-    await interaction.response.send_message(embed=embed, view=MyView())
+    await interaction.response.send_message(embed=embed, view=EmbedControl("Join Table, joinTable"))
 
-class MyView(View):
-    def __init__(self):
+class EmbedControl(View):
+    def __init__(self,primaryLabel,primaryID,parentData):
         super().__init__(timeout=None)  
 
-        self.add_item(Button(label="Primary Button", style=discord.ButtonStyle.primary, custom_id="primary"))
-        self.add_item(Button(label="Link Button", style=discord.ButtonStyle.link, url="https://example.com"))
+        self.add_item(Button(label=primaryLabel, style=discord.ButtonStyle.primary, custom_id=primaryID))
+
+class TableControl(View):
+    def __init__(self, tableName):
+        super().__init__(timeout=None)  
+        self.tableName = tableName
+
+        joinButton = Button(label="Join Table", style=discord.ButtonStyle.primary)
+        joinButton.callback = self.wrap_callback(joinTable)
+        self.add_item(joinButton)
+
+    def wrap_callback(self, func):
+        async def callback(interaction: discord.Interaction):
+            await func(interaction, self.tableName)
+        return callback
 
 @client.event
 async def on_interaction(interaction: discord.Interaction):
-    if interaction.data.get("custom_id") == "primary":
-        await interaction.response.send_message("You clicked the Primary button!", ephemeral=True)
+    switch = {
+        "joinTable":joinTable
+    }
+    result = switch.get(interaction.data.get("custom_id"))
+    if result:
+        await result(interaction)
+    else: 
+        await interaction.response.send_message(interaction.data, ephemeral=False)
+
+async def joinTable(interaction: discord.Interaction, tableName):
+    await interaction.response.send_message(f"{interaction.user.name} has joined table {tableName}", ephemeral=False)
+    
 
 # @client.command()
 # async def menu(ctx):
