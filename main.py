@@ -30,26 +30,33 @@ class TableSetup(discord.ui.Modal, title="Table Setup"):
         style=discord.TextStyle.short,
         placeholder="Small Blind",
         required=True,
-        max_length=300
+        max_length=5
     )
     bigBlind = discord.ui.TextInput(
         label="Big Blind",
         style=discord.TextStyle.short,
         placeholder="Big Blind",
         required=True,
-        max_length=300
+        max_length=5
     )
     maxPlayers = discord.ui.TextInput(
         label="Max Players",
         style=discord.TextStyle.short,
         placeholder="Leave Blank For Uncapped Players",
-        max_length=300
+        required=False,
+        max_length=1
     )
 
     async def on_submit(self, interaction: discord.Interaction):
+        if self.maxPlayers == None or (int)(str(self.maxPlayers)) <= 0:
+            self.maxPlayers = "Uncapped"
+        embed = discord.Embed(
+        title=f"{interaction.user.display_name} Has Created Table, {self.tableName}!",
+        description= f"<:brokre:1376477769570975744>Small Blind: {self.smallBlind} \n <:brokre:1376477769570975744>Big Blind: {self.bigBlind}\n  Max Players: {self.maxPlayers}",
+        color=discord.Color.brand_red() 
+    )
         await interaction.response.send_message(
-            f"You said: {self.tableName} {self.smallBlind} {self.bigBlind} {self.maxPlayers}",
-            ephemeral=True
+            embed=embed,view=MyView()
         )
 
 @client.tree.command(name="start", guild=brogreID)
@@ -81,35 +88,6 @@ async def profile(interaction: discord.Interaction):
 
     await interaction.response.send_message(embed=embed, view=MyView())
 
-@client.tree.command(name="fart", guild=brogreID)
-async def fart(interaction: discord.Interaction):
-    embed = discord.Embed(
-        title="📌 title",
-        description="desc",
-        color=discord.Color.blue()  
-    )
-    embed.set_footer(text="footer")
-    embed.set_thumbnail(url="") 
-
-    await interaction.response.send_message(embed=embed, view=MyView())
-
-class DropdownMenu(Select):
-    def __init__(self):
-        options = [
-            discord.SelectOption(label="Option 1", description="option a"),
-            discord.SelectOption(label="Option 2", description="option b"),
-            discord.SelectOption(label="Option 3", description="option c"),
-        ]
-        super().__init__(placeholder="wtf", min_values=1, max_values=1, options=options)
-
-    async def callback(self, interaction: discord.Interaction):
-        await interaction.response.send_message(f"You selected: **{self.values[0]}**", ephemeral=True)
-
-class DropdownView(View):
-    def __init__(self):
-        super().__init__()
-        self.add_item(DropdownMenu())
-
 class MyView(View):
     def __init__(self):
         super().__init__(timeout=None)  
@@ -117,26 +95,31 @@ class MyView(View):
         self.add_item(Button(label="Primary Button", style=discord.ButtonStyle.primary, custom_id="primary"))
         self.add_item(Button(label="Link Button", style=discord.ButtonStyle.link, url="https://example.com"))
 
-@client.command()
-async def embed(ctx):
-    embed = discord.Embed(
-        title="📌 title",
-        description="desc",
-        color=discord.Color.blue() 
-    )
-    embed.set_footer(text="footer")
-    embed.set_thumbnail(url="") 
-
-    await ctx.send(embed=embed, view=MyView())
-
 @client.event
 async def on_interaction(interaction: discord.Interaction):
     if interaction.data.get("custom_id") == "primary":
         await interaction.response.send_message("You clicked the Primary button!", ephemeral=True)
 
-@client.command()
-async def menu(ctx):
-    await ctx.send("menu:", view=DropdownView())
+# @client.command()
+# async def menu(ctx):
+#     await ctx.send("menu:", view=DropdownView())
+
+# class DropdownMenu(Select):
+#     def __init__(self):
+#         options = [
+#             discord.SelectOption(label="Option 1", description="option a"),
+#             discord.SelectOption(label="Option 2", description="option b"),
+#             discord.SelectOption(label="Option 3", description="option c"),
+#         ]
+#         super().__init__(placeholder="wtf", min_values=1, max_values=1, options=options)
+
+#     async def callback(self, interaction: discord.Interaction):
+#         await interaction.response.send_message(f"You selected: **{self.values[0]}**", ephemeral=True)
+
+# class DropdownView(View):
+#     def __init__(self):
+#         super().__init__()
+#         self.add_item(DropdownMenu())
 
   
 client.run(token)
