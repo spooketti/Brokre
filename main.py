@@ -23,6 +23,10 @@ async def on_ready():
   except:
     print("sucks")
 
+pokerTables = {
+    "table":{"people","people"}
+}
+
 class TableSetup(discord.ui.Modal, title="Table Setup"):
     tableName = discord.ui.TextInput(label="Table Name", placeholder="Brokre Poker Table Name")
     smallBlind = discord.ui.TextInput(
@@ -54,15 +58,24 @@ class TableSetup(discord.ui.Modal, title="Table Setup"):
             self.maxPlayers = (int)(self.maxPlayers)
         except:
             self.maxPlayers = "Uncapped"
-            
+        if(pokerTables.get(str(self.tableName.value)) != None):
+            await interaction.response.send_message(f"Table {self.tableName} already exists!", ephemeral=True)
+            return
+        
+        pokerTables[str(self.tableName.value)] = set()
         embed = discord.Embed(
         title=f"{interaction.user.display_name} Has Created Table, {self.tableName}!",
         description= f"<:brokre:1376477769570975744>Small Blind: {self.smallBlind} \n <:brokre:1376477769570975744>Big Blind: {self.bigBlind}\n  Max Players: {self.maxPlayers}",
         color=discord.Color.brand_red() 
     )
+        
         await interaction.response.send_message(
-             embed=embed,view=TableControl(self.tableName)
+        embed=embed
         )
+        message = await interaction.original_response()
+
+        view = TableControl(self.tableName, message)
+        await message.edit(view=view)
 
 @client.tree.command(name="start", guild=brogreID)
 async def start(interaction: discord.Interaction):
@@ -100,9 +113,10 @@ class EmbedControl(View):
         self.add_item(Button(label=primaryLabel, style=discord.ButtonStyle.primary, custom_id=primaryID))
 
 class TableControl(View):
-    def __init__(self, tableName):
+    def __init__(self, tableName,message):
         super().__init__(timeout=None)  
         self.tableName = tableName
+        self.message = message
 
         joinButton = Button(label="Join Table", style=discord.ButtonStyle.primary)
         joinButton.callback = self.wrap_callback(joinTable)
@@ -110,21 +124,33 @@ class TableControl(View):
 
     def wrap_callback(self, func):
         async def callback(interaction: discord.Interaction):
-            await func(interaction, self.tableName)
+            await func(interaction, self.tableName,self.message)
         return callback
 
 @client.event
 async def on_interaction(interaction: discord.Interaction):
-    switch = {
-        "joinTable":joinTable
-    }
-    result = switch.get(interaction.data.get("custom_id"))
-    if result:
-        await result(interaction)
-    else: 
-        await interaction.response.send_message(interaction.data, ephemeral=False)
+    pass
+    # switch = {
+    #     "joinTable":joinTable
+    # }
+    # result = switch.get(interaction.data.get("custom_id"))
+    # if result:
+    #     await result(interaction)
+    # else: 
+    #     await interaction.response.send_message(interaction.data, ephemeral=False)
 
-async def joinTable(interaction: discord.Interaction, tableName):
+async def joinTable(interaction: discord.Interaction, tableName,message):
+    if(str(interaction.user.name) in pokerTables[str(tableName.value)]):
+        await interaction.response.send_message(f"You are already in table {tableName}!")
+        return
+    pokerTables[str(tableName.value)].add(interaction.user.name)
+    ogEmbed = message
+    new_embed = discord.Embed(
+            title=f"{interaction.user.display_name}'s Table Updated!",
+            description="New details here...",
+            color=discord.Color.green()
+        )
+    await ogEmbed.edit(embed=new_embed)
     await interaction.response.send_message(f"{interaction.user.name} has joined table {tableName}", ephemeral=False)
     
 
